@@ -4,6 +4,7 @@
  * LoginForm.tsx
  * Formulario de inicio de sesión con validación Zod + React Hook Form.
  * Conectado al backend de AWOS para autenticación real.
+ * Manejo robusto de errores con mensajes específicos y animaciones.
  */
 
 import { useState } from 'react';
@@ -12,7 +13,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { Mail, Eye, EyeOff } from 'lucide-react';
+import { Mail, Eye, EyeOff, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { CyberInput } from '@/components/ui/CyberInput';
 import { CyberButton } from '@/components/ui/CyberButton';
 import { login, ApiError } from '@/lib/api';
@@ -20,13 +21,9 @@ import { useStore } from '@/lib/store';
 
 // ─── Schema Zod ───────────────────────────────────────────────────────────────
 
-/**
- * Validación del formulario de login.
- * Los mensajes de error se muestran debajo de cada campo en magenta.
- */
 const loginSchema = z.object({
   email:    z.string().email('Email inválido'),
-  password: z.string().min(8, 'Mínimo 8 caracteres'),
+  password: z.string().min(1, 'La contraseña es requerida'),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -53,46 +50,178 @@ export function LoginForm() {
     setIsLoading(true);
 
     try {
-      // Llama a la API y guarda token en localStorage
       const response = await login(data);
 
-      console.log('Login response:', response);
-
-      // Actualiza el store de Zustand con el usuario autenticado
+      // Actualizar store de Zustand
       useStore.setState({
         user: response.data.user,
         isAuthenticated: true,
       });
 
-      toast.success(`Bienvenido de nuevo, ${response.data.user.name}!`);
-      router.push('/dashboard');
+      // Toast de éxito con animación personalizada
+      toast.success(
+        (t) => (
+          <div className="flex items-center gap-3">
+            <CheckCircle2 size={20} className="text-[#00ffff]" />
+            <div className="flex flex-col gap-0.5">
+              <span className="font-mono text-sm font-bold">
+                ¡Bienvenido de nuevo!
+              </span>
+              <span className="font-mono text-xs text-[#888888]">
+                {response.data.user.name}
+              </span>
+            </div>
+          </div>
+        ),
+        {
+          duration: 3000,
+          style: {
+            background: '#0a0a0a',
+            border: '1px solid rgba(0,255,255,0.3)',
+            boxShadow: '0 0 20px rgba(0,255,255,0.1)',
+          },
+        }
+      );
+
+      // Pequeño delay para que el usuario vea el toast antes de redirigir
+      setTimeout(() => router.push('/dashboard'), 500);
     } catch (error) {
-      console.error('Login error:', error);
-      
+      // Manejo robusto de todos los tipos de error posibles
       const apiError = error as ApiError;
 
-      if (apiError.details) {
-        // Errores de validación (400)
+      // 1. Errores de validación (400)
+      if (apiError.status === 400 && apiError.details) {
         Object.entries(apiError.details).forEach(([field, messages]) => {
           setError(field as keyof LoginFormValues, {
             message: messages[0],
           });
         });
-        toast.error('Por favor corrige los errores');
-      } else if (apiError.error === 'Invalid credentials') {
-        // Credenciales incorrectas (401)
+        toast.error(
+          (t) => (
+            <div className="flex items-center gap-3">
+              <AlertCircle size={20} className="text-[#ff00ff]" />
+              <span className="font-mono text-sm">
+                Por favor corrige los errores
+              </span>
+            </div>
+          ),
+          {
+            duration: 4000,
+            style: {
+              background: '#0a0a0a',
+              border: '1px solid rgba(255,0,255,0.3)',
+            },
+          }
+        );
+      }
+      // 2. Credenciales incorrectas (401)
+      else if (apiError.status === 401 || apiError.error?.includes('credentials')) {
         setError('email', { message: 'Credenciales incorrectas' });
         setError('password', { message: 'Credenciales incorrectas' });
-        toast.error('Credenciales incorrectas');
-      } else if (apiError.status === 429 || apiError.error === 'Demasiados intentos. Intenta en 15 minutos.') {
-        // Rate limit (429)
-        const waitSeconds = apiError.retryAfter ?? 60;
-        toast.error(`Demasiados intentos. Intenta en ${waitSeconds}s.`);
-      } else {
-        // Error genérico
-        toast.error('Error al iniciar sesión. Intenta de nuevo.');
+        toast.error(
+          (t) => (
+            <div className="flex items-center gap-3">
+              <XCircle size={20} className="text-[#ff00ff]" />
+              <div className="flex flex-col gap-0.5">
+                <span className="font-mono text-sm font-bold">
+                  Credenciales incorrectas
+                </span>
+                <span className="font-mono text-xs text-[#888888]">
+                  Verifica tu email y contraseña
+                </span>
+              </div>
+            </div>
+          ),
+          {
+            duration: 4000,
+            style: {
+              background: '#0a0a0a',
+              border: '1px solid rgba(255,0,255,0.3)',
+            },
+          }
+        );
       }
-    } finally {
+      // 3. Rate limit (429)
+      else if (apiError.status === 429) {
+        const waitMinutes = Math.ceil((apiError.retryAfter ?? 900) / 60);
+        toast.error(
+          (t) => (
+            <div className="flex items-center gap-3">
+              <AlertCircle size={20} className="text-[#ffff00]" />
+              <div className="flex flex-col gap-0.5">
+                <span className="font-mono text-sm font-bold">
+                  Demasiados intentos
+                </span>
+                <span className="font-mono text-xs text-[#888888]">
+                  Intenta de nuevo en {waitMinutes} minutos
+                </span>
+              </div>
+            </div>
+          ),
+          {
+            duration: 6000,
+            style: {
+              background: '#0a0a0a',
+              border: '1px solid rgba(255,255,0,0.3)',
+            },
+          }
+        );
+      }
+      // 4. Error de red o timeout
+      else if (
+        error instanceof TypeError ||
+        apiError.error?.includes('fetch') ||
+        apiError.error?.includes('network')
+      ) {
+        toast.error(
+          (t) => (
+            <div className="flex items-center gap-3">
+              <XCircle size={20} className="text-[#ff00ff]" />
+              <div className="flex flex-col gap-0.5">
+                <span className="font-mono text-sm font-bold">
+                  Error de conexión
+                </span>
+                <span className="font-mono text-xs text-[#888888]">
+                  Verifica tu conexión a internet
+                </span>
+              </div>
+            </div>
+          ),
+          {
+            duration: 5000,
+            style: {
+              background: '#0a0a0a',
+              border: '1px solid rgba(255,0,255,0.3)',
+            },
+          }
+        );
+      }
+      // 5. Error genérico (500, otros)
+      else {
+        toast.error(
+          (t) => (
+            <div className="flex items-center gap-3">
+              <XCircle size={20} className="text-[#ff00ff]" />
+              <div className="flex flex-col gap-0.5">
+                <span className="font-mono text-sm font-bold">
+                  Error al iniciar sesión
+                </span>
+                <span className="font-mono text-xs text-[#888888]">
+                  {apiError.error || 'Intenta de nuevo en unos momentos'}
+                </span>
+              </div>
+            </div>
+          ),
+          {
+            duration: 5000,
+            style: {
+              background: '#0a0a0a',
+              border: '1px solid rgba(255,0,255,0.3)',
+            },
+          }
+        );
+      }
+
       setIsLoading(false);
     }
   }
@@ -113,10 +242,9 @@ export function LoginForm() {
           error={errors.email?.message}
           {...register('email')}
         />
-        {/* Mensaje de error Zod — magenta, font-mono, 11px */}
         {errors.email && (
           <span
-            className="pl-1 font-mono"
+            className="pl-1 font-mono animate-in fade-in slide-in-from-top-1 duration-200"
             style={{ color: '#ff00ff', fontSize: '11px' }}
             role="alert"
           >
@@ -132,7 +260,6 @@ export function LoginForm() {
           type={showPassword ? 'text' : 'password'}
           autoComplete="current-password"
           error={errors.password?.message}
-          // Icono derecho: botón de ojo para mostrar/ocultar contraseña
           iconRight={
             <button
               type="button"
@@ -145,10 +272,9 @@ export function LoginForm() {
           }
           {...register('password')}
         />
-        {/* Mensaje de error Zod */}
         {errors.password && (
           <span
-            className="pl-1 font-mono"
+            className="pl-1 font-mono animate-in fade-in slide-in-from-top-1 duration-200"
             style={{ color: '#ff00ff', fontSize: '11px' }}
             role="alert"
           >
@@ -166,7 +292,7 @@ export function LoginForm() {
         disabled={isLoading}
         className="mt-2 w-full"
       >
-        Ingresar →
+        {isLoading ? 'Verificando...' : 'Ingresar →'}
       </CyberButton>
 
       {/* Hint de credenciales de prueba */}

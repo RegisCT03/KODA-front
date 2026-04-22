@@ -4,8 +4,7 @@
  * RegisterForm.tsx
  * Formulario de registro con validación Zod + React Hook Form.
  * Conectado al backend de AWOS para registro real de usuarios.
- *
- * Incluye el indicador de fuerza de contraseña (PasswordStrength).
+ * Manejo robusto de errores con mensajes específicos y animaciones.
  */
 
 import { useState } from 'react';
@@ -14,7 +13,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { User, Mail, Eye, EyeOff, Lock } from 'lucide-react';
+import { User, Mail, Eye, EyeOff, Lock, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { CyberInput } from '@/components/ui/CyberInput';
 import { CyberButton } from '@/components/ui/CyberButton';
 import { PasswordStrength } from './PasswordStrength';
@@ -23,15 +22,10 @@ import { useStore } from '@/lib/store';
 
 // ─── Schema Zod ───────────────────────────────────────────────────────────────
 
-/**
- * Validación del formulario de registro.
- * El refine verifica que password y confirm coincidan.
- * Las reglas de password deben coincidir con el backend.
- */
 const registerSchema = z
   .object({
-    name:     z.string().min(2, 'Mínimo 2 caracteres'),
-    email:    z.string().email('Email inválido'),
+    name:     z.string().min(2, 'Mínimo 2 caracteres').max(100, 'Máximo 100 caracteres'),
+    email:    z.string().email('Email inválido').max(100, 'Máximo 100 caracteres'),
     password: z
       .string()
       .min(8, 'Mínimo 8 caracteres')
@@ -46,19 +40,35 @@ const registerSchema = z
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
+// ─── Helpers de toast ─────────────────────────────────────────────────────────
+
+const toastStyles = {
+  error: {
+    background: '#0a0a0a',
+    border: '1px solid rgba(255,0,255,0.3)',
+    boxShadow: '0 0 20px rgba(255,0,255,0.08)',
+  },
+  success: {
+    background: '#0a0a0a',
+    border: '1px solid rgba(0,255,255,0.3)',
+    boxShadow: '0 0 20px rgba(0,255,255,0.1)',
+  },
+  warning: {
+    background: '#0a0a0a',
+    border: '1px solid rgba(255,255,0,0.3)',
+    boxShadow: '0 0 20px rgba(255,255,0,0.08)',
+  },
+};
+
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export function RegisterForm() {
   const router = useRouter();
 
-  // Estado para mostrar/ocultar contraseñas
-  const [showPassword, setShowPassword]  = useState(false);
-  const [showConfirm,  setShowConfirm]   = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm,  setShowConfirm]  = useState(false);
+  const [isLoading, setIsLoading]       = useState(false);
 
-  // Estado de carga durante el submit
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Configuración de React Hook Form con resolver Zod
   const {
     register,
     handleSubmit,
@@ -69,56 +79,130 @@ export function RegisterForm() {
     resolver: zodResolver(registerSchema),
   });
 
-  // Observa el campo password para el indicador de fuerza
   const passwordValue = watch('password', '');
-
-  // ── Handler de submit ──────────────────────────────────────────────────────
 
   async function onSubmit(data: RegisterFormValues) {
     if (isLoading) return;
     setIsLoading(true);
 
     try {
-      // Llamar al backend para registrar usuario
       const response = await registerUser({
         name: data.name,
         email: data.email,
         password: data.password,
       });
 
-      // Registro exitoso — actualizar store y redirigir
+      // Actualizar store de Zustand
       useStore.setState({
         user: response.data.user,
         isAuthenticated: true,
       });
 
-      toast.success(`¡Cuenta creada! Bienvenido ${response.data.user.name} 🚀`);
-      router.push('/test');
+      toast.success(
+        () => (
+          <div className="flex items-center gap-3">
+            <CheckCircle2 size={20} className="text-[#00ffff]" />
+            <div className="flex flex-col gap-0.5">
+              <span className="font-mono text-sm font-bold">¡Cuenta creada!</span>
+              <span className="font-mono text-xs text-[#888888]">
+                Bienvenido, {response.data.user.name}
+              </span>
+            </div>
+          </div>
+        ),
+        { duration: 3000, style: toastStyles.success }
+      );
+
+      setTimeout(() => router.push('/test'), 500);
     } catch (error) {
-      // Manejar errores del backend
       const apiError = error as ApiError;
 
-      if (apiError.details) {
-        // Errores de validación (400)
+      // 1. Errores de validación (400)
+      if (apiError.status === 400 && apiError.details) {
         Object.entries(apiError.details).forEach(([field, messages]) => {
-          setError(field as keyof RegisterFormValues, {
-            message: messages[0],
-          });
+          setError(field as keyof RegisterFormValues, { message: messages[0] });
         });
-        toast.error('Por favor corrige los errores');
-      } else if (apiError.error === 'Email already registered') {
-        // Email duplicado (409)
-        setError('email', { message: 'Este email ya está registrado' });
-        toast.error('Este email ya está registrado');
-      } else if (apiError.status === 429 || apiError.error === 'Demasiados intentos. Intenta en 15 minutos.') {
-        // Rate limit (429)
-        const waitSeconds = apiError.retryAfter ?? 60;
-        toast.error(`Demasiados intentos. Intenta en ${waitSeconds}s.`);
-      } else {
-        // Error genérico
-        toast.error('Error al crear la cuenta. Intenta de nuevo.');
+        toast.error(
+          () => (
+            <div className="flex items-center gap-3">
+              <AlertCircle size={20} className="text-[#ff00ff]" />
+              <span className="font-mono text-sm">Corrige los errores del formulario</span>
+            </div>
+          ),
+          { duration: 4000, style: toastStyles.error }
+        );
       }
-    } finally {
+      // 2. Email ya registrado (409)
+      else if (apiError.status === 409 || apiError.error?.includes('already registered')) {
+        setError('email', { message: 'Este email ya está registrado' });
+        toast.error(
+          () => (
+            <div className="flex items-center gap-3">
+              <XCircle size={20} className="text-[#ff00ff]" />
+              <div className="flex flex-col gap-0.5">
+                <span className="font-mono text-sm font-bold">Email ya registrado</span>
+                <span className="font-mono text-xs text-[#888888]">
+                  ¿Ya tienes cuenta? Inicia sesión
+                </span>
+              </div>
+            </div>
+          ),
+          { duration: 5000, style: toastStyles.error }
+        );
+      }
+      // 3. Rate limit (429)
+      else if (apiError.status === 429) {
+        const waitMinutes = Math.ceil((apiError.retryAfter ?? 900) / 60);
+        toast.error(
+          () => (
+            <div className="flex items-center gap-3">
+              <AlertCircle size={20} className="text-[#ffff00]" />
+              <div className="flex flex-col gap-0.5">
+                <span className="font-mono text-sm font-bold">Demasiados intentos</span>
+                <span className="font-mono text-xs text-[#888888]">
+                  Intenta de nuevo en {waitMinutes} minutos
+                </span>
+              </div>
+            </div>
+          ),
+          { duration: 6000, style: toastStyles.warning }
+        );
+      }
+      // 4. Error de red
+      else if (error instanceof TypeError || apiError.error?.includes('fetch')) {
+        toast.error(
+          () => (
+            <div className="flex items-center gap-3">
+              <XCircle size={20} className="text-[#ff00ff]" />
+              <div className="flex flex-col gap-0.5">
+                <span className="font-mono text-sm font-bold">Error de conexión</span>
+                <span className="font-mono text-xs text-[#888888]">
+                  Verifica tu conexión a internet
+                </span>
+              </div>
+            </div>
+          ),
+          { duration: 5000, style: toastStyles.error }
+        );
+      }
+      // 5. Error genérico
+      else {
+        toast.error(
+          () => (
+            <div className="flex items-center gap-3">
+              <XCircle size={20} className="text-[#ff00ff]" />
+              <div className="flex flex-col gap-0.5">
+                <span className="font-mono text-sm font-bold">Error al crear cuenta</span>
+                <span className="font-mono text-xs text-[#888888]">
+                  {apiError.error || 'Intenta de nuevo en unos momentos'}
+                </span>
+              </div>
+            </div>
+          ),
+          { duration: 5000, style: toastStyles.error }
+        );
+      }
+
       setIsLoading(false);
     }
   }
@@ -139,10 +223,9 @@ export function RegisterForm() {
           error={errors.name?.message}
           {...register('name')}
         />
-        {/* Mensaje de error Zod — magenta, font-mono, 11px */}
         {errors.name && (
           <span
-            className="pl-1 font-mono"
+            className="pl-1 font-mono animate-in fade-in slide-in-from-top-1 duration-200"
             style={{ color: '#ff00ff', fontSize: '11px' }}
             role="alert"
           >
@@ -161,10 +244,9 @@ export function RegisterForm() {
           error={errors.email?.message}
           {...register('email')}
         />
-        {/* Mensaje de error Zod */}
         {errors.email && (
           <span
-            className="pl-1 font-mono"
+            className="pl-1 font-mono animate-in fade-in slide-in-from-top-1 duration-200"
             style={{ color: '#ff00ff', fontSize: '11px' }}
             role="alert"
           >
@@ -182,7 +264,6 @@ export function RegisterForm() {
             autoComplete="new-password"
             iconLeft={<Lock size={16} />}
             error={errors.password?.message}
-            // Botón de ojo para mostrar/ocultar contraseña
             iconRight={
               <button
                 type="button"
@@ -195,10 +276,9 @@ export function RegisterForm() {
             }
             {...register('password')}
           />
-          {/* Mensaje de error Zod */}
           {errors.password && (
             <span
-              className="pl-1 font-mono"
+              className="pl-1 font-mono animate-in fade-in slide-in-from-top-1 duration-200"
               style={{ color: '#ff00ff', fontSize: '11px' }}
               role="alert"
             >
@@ -206,11 +286,7 @@ export function RegisterForm() {
             </span>
           )}
         </div>
-
-        {/* Indicador de fuerza — solo visible cuando hay valor en el campo */}
-        {passwordValue.length > 0 && (
-          <PasswordStrength password={passwordValue} />
-        )}
+        {passwordValue.length > 0 && <PasswordStrength password={passwordValue} />}
       </div>
 
       {/* ── Campo Confirmar Password ── */}
@@ -233,10 +309,9 @@ export function RegisterForm() {
           }
           {...register('confirm')}
         />
-        {/* Mensaje de error Zod — incluye el error de refine */}
         {errors.confirm && (
           <span
-            className="pl-1 font-mono"
+            className="pl-1 font-mono animate-in fade-in slide-in-from-top-1 duration-200"
             style={{ color: '#ff00ff', fontSize: '11px' }}
             role="alert"
           >
@@ -254,7 +329,7 @@ export function RegisterForm() {
         disabled={isLoading}
         className="mt-2 w-full"
       >
-        Crear cuenta →
+        {isLoading ? 'Creando cuenta...' : 'Crear cuenta →'}
       </CyberButton>
     </form>
   );
