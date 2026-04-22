@@ -213,10 +213,12 @@ export default function TestPage() {
     if (snippetId && snippetId.match(/^[0-9a-f-]{36}$/i)) {
       createSession({
         snippetId,
+        wpm:          result.wpm,
+        accuracy:     result.precision,
         correctChars: engine.correctChars,
-        totalErrors: engine.totalErrors,
-        durationMs: Math.max(elapsedSecs, 1) * 1000,
-        keyErrors: result.difficultKeys,
+        totalErrors:  engine.totalErrors,
+        durationMs:   Math.max(elapsedSecs, 1) * 1000,
+        keyErrors:    result.difficultKeys,
       }).catch((err) => console.error('Error guardando sesión:', err));
     }
   }, [isExpired, engine.isComplete, engine, elapsedSecs]);

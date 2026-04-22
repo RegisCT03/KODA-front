@@ -224,11 +224,13 @@ export async function fetchSnippet(
 // ─── Sesiones de Escritura ────────────────────────────────────────────
 
 export interface CreateSessionInput {
-  snippetId: string;
+  snippetId:    string;
+  wpm:          number;
+  accuracy:     number;   // 0-100
   correctChars: number;
-  totalErrors: number;
-  durationMs: number;
-  keyErrors?: string[];
+  totalErrors:  number;
+  durationMs:   number;
+  keyErrors?:   string[];
 }
 
 export async function createSession(input: CreateSessionInput) {

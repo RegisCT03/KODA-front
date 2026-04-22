@@ -111,15 +111,17 @@ export const useStore = create<StoreState>()((set, get) => ({
     if (currentSnippet && isAuthenticated) {
       try {
         const timeMs = (result as any).timeMs || 60000;
-        const durationMs = Math.max(1000, timeMs); 
+        const durationMs = Math.max(1000, timeMs);
         const estimatedCorrectChars = Math.round(result.wpm * 5 * (durationMs / 60000));
         const correctChars = (result as any).correctChars || estimatedCorrectChars;
         const payload = {
-          snippetId: currentSnippet.id,
+          snippetId:    currentSnippet.id,
+          wpm:          result.wpm,
+          accuracy:     result.precision,   // precision es 0-100
           correctChars: correctChars,
-          totalErrors: (result as any).mistakes || result.totalErrors || 0,
-          durationMs: durationMs,
-          keyErrors: result.difficultKeys || [] 
+          totalErrors:  (result as any).mistakes || result.totalErrors || 0,
+          durationMs:   durationMs,
+          keyErrors:    result.difficultKeys || [],
         };
         await createSession(payload);
       } catch (error) {
