@@ -56,8 +56,9 @@ export function LoginForm() {
       // Llama a la API y guarda token en localStorage
       const response = await login(data);
 
+      console.log('Login response:', response);
+
       // Actualiza el store de Zustand con el usuario autenticado
-      // Esto es necesario para que ProtectedRoute y Navbar reflejen la sesión
       useStore.setState({
         user: response.data.user,
         isAuthenticated: true,
@@ -66,7 +67,8 @@ export function LoginForm() {
       toast.success(`Bienvenido de nuevo, ${response.data.user.name}!`);
       router.push('/dashboard');
     } catch (error) {
-      // Manejar errores del backend
+      console.error('Login error:', error);
+      
       const apiError = error as ApiError;
 
       if (apiError.details) {

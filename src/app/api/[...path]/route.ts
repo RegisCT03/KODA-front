@@ -142,10 +142,19 @@ async function proxyRequest(
         signal: abortController.signal,
       })
 
-      return new Response(backendResponse.body, {
+      // Construir headers de respuesta limpiando los de encoding
+      // para evitar que el cliente intente decodificar Brotli/gzip dos veces
+      const responseHeaders = new Headers(backendResponse.headers)
+      responseHeaders.delete('content-encoding')
+      responseHeaders.delete('transfer-encoding')
+
+      // Leer el body como texto y re-enviarlo para evitar problemas de streaming
+      const responseBody = await backendResponse.text()
+
+      return new Response(responseBody, {
         status: backendResponse.status,
         statusText: backendResponse.statusText,
-        headers: backendResponse.headers,
+        headers: responseHeaders,
       })
     } finally {
       clearTimeout(timeoutId)
