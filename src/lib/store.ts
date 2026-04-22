@@ -117,9 +117,9 @@ export const useStore = create<StoreState>()((set, get) => ({
         const payload = {
           snippetId: currentSnippet.id,
           correctChars: correctChars,
-          totalErrors: (result as any).mistakes || 0,
+          totalErrors: (result as any).mistakes || result.totalErrors || 0,
           durationMs: durationMs,
-          keyErrors: [] 
+          keyErrors: result.difficultKeys || [] 
         };
         await createSession(payload);
       } catch (error) {
