@@ -140,7 +140,6 @@ function HeroSection() {
               <span className="ml-3 font-mono text-xs" style={{ color: '#333333' }}>snippet.py</span>
             </div>
 
-            {/* Código Python con syntax highlight manual */}
             <pre className="font-mono text-sm leading-7" aria-hidden="true">
               <code>
                 <span style={{ color: '#333333' }}># función de saludo personalizado</span>{'\n'}
