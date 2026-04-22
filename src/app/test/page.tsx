@@ -32,7 +32,7 @@ import { CodeArea }         from '@/components/test/CodeArea';
 import { ResultModal }      from '@/components/test/ResultModal';
 
 import { getRandomSnippet } from '@/lib/test-snippets';
-import { fetchSnippet } from '@/lib/api';
+import { createSession, fetchSnippet } from '@/lib/api';
 import type { LanguageSlug, Difficulty } from '@/lib/mock-data';
 import type { TypingResult } from '@/hooks/useTypingEngine';
 
@@ -198,17 +198,27 @@ export default function TestPage() {
    */
   const sessionEndedRef = useRef(false);
 
+
   useEffect(() => {
-    // Solo procesar una vez por sesión
     if (sessionEndedRef.current) return;
     if (!isExpired && !engine.isComplete) return;
 
     sessionEndedRef.current = true;
 
-    // Construir el resultado final con los segundos reales transcurridos
     const result = engine.buildResult(Math.max(elapsedSecs, 1));
     setFinalResult(result);
     setShowModal(true);
+
+    const snippetId = currentSnippet.id;
+    if (snippetId && snippetId.match(/^[0-9a-f-]{36}$/i)) {
+      createSession({
+        snippetId,
+        correctChars: engine.correctChars,
+        totalErrors: engine.totalErrors,
+        durationMs: Math.max(elapsedSecs, 1) * 1000,
+        keyErrors: result.difficultKeys,
+      }).catch((err) => console.error('Error guardando sesión:', err));
+    }
   }, [isExpired, engine.isComplete, engine, elapsedSecs]);
 
   // ── Acciones ──────────────────────────────────────────────────────────────

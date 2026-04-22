@@ -8,6 +8,7 @@ import { WpmChart } from '@/components/dashboard/WpmChart';
 import { DifficultKeysHeatmap } from '@/components/dashboard/DifficultKeysHeatmap';
 import { SessionsTable } from '@/components/dashboard/SessionsTable';
 import { getMySessions } from '@/lib/api';
+import { useProgress } from '@/hooks/useProgress';
 
 interface SessionData {
   id?: string;
@@ -27,7 +28,8 @@ interface SessionData {
 export default function DashboardPage() {
   const [sessions, setSessions] = useState<SessionData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); 
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { data: progressData } = useProgress();
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -77,8 +79,7 @@ export default function DashboardPage() {
 
   return (
     <div className="flex min-h-screen bg-black text-white font-mono">
-      <DashboardSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-
+      <DashboardSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} progressData={progressData}/>
       <main className="flex-1 p-8 md:pl-[260px]"> {/* Añadimos padding izquierdo para escritorio */}
         <div className="max-w-6xl mx-auto space-y-8">
           
