@@ -104,6 +104,10 @@ async function proxyRequest(
         outgoingHeaders.set(headerName, value)
       }
     })
+    // Forzar respuesta sin compresión: el proxy lee el body como texto,
+    // si el backend comprime (gzip/br) y reenvía el content-length comprimido
+    // el cliente recibe JSON truncado.
+    outgoingHeaders.set('accept-encoding', 'identity')
 
     const clientIp = getClientIp(request.headers)
     if (clientIp) {
@@ -147,6 +151,9 @@ async function proxyRequest(
       const responseHeaders = new Headers(backendResponse.headers)
       responseHeaders.delete('content-encoding')
       responseHeaders.delete('transfer-encoding')
+      // Eliminar content-length del backend: corresponde al tamaño comprimido.
+      // El cliente calculará el tamaño real del body descomprimido.
+      responseHeaders.delete('content-length')
 
       // Leer el body como texto y re-enviarlo para evitar problemas de streaming
       const responseBody = await backendResponse.text()
