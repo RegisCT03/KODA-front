@@ -7,59 +7,32 @@
  * Características:
  *  - Glassmorphism oscuro: fondo rgba(0,0,0,0.8) + backdrop-blur
  *  - Borde inferior cian muy sutil
- *  - Logo "AWOS" en fuente mono con glow cian
+ *  - Logo "KODA" en fuente mono con glow cian
  *  - Links "Test" y "Dashboard" con indicador underline animado (layoutId)
  *  - Estado sin usuario: botón "Login" (CyberButton ghost)
  *  - Estado con usuario: avatar con iniciales + nombre + botón "Logout"
  *  - Responsive: hamburger en móvil con menú desplegable animado
  *
- * NOTA MOCK: Esta versión no consulta Zustand todavía.
- * Cambiar MOCK_LOGGED_IN a true/false para ver ambos estados.
+ * Conectado al store de Zustand para leer el usuario real y ejecutar logout.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 import { CyberButton } from '@/components/ui/CyberButton';
-
-// ─── Configuración mock ───────────────────────────────────────────────────────
-
-/**
- * MOCK_LOGGED_IN
- * Cambia este valor para previsualizar el estado autenticado o anónimo.
- *  true  → muestra avatar + nombre + Logout
- *  false → muestra botón Login
- */
-const MOCK_LOGGED_IN = true;
-
-/**
- * Usuario mock hardcodeado para previsualización.
- * Cuando se integre Zustand, reemplazar por useUser() del store.
- */
-const MOCK_USER = {
-  username: 'koda_tester',
-  email:    'test@koda.dev',
-};
+import { useStore } from '@/lib/store';
 
 // ─── Links de navegación ──────────────────────────────────────────────────────
 
-/**
- * Definición de los links del navbar.
- * href debe coincidir con las rutas del App Router.
- */
 const NAV_LINKS = [
-  { label: 'Test',       href: '/test'      },
-  { label: 'Dashboard',  href: '/dashboard' },
+  { label: 'Test',      href: '/test'      },
+  { label: 'Dashboard', href: '/dashboard' },
 ] as const;
 
 // ─── Subcomponente: Logo ──────────────────────────────────────────────────────
 
-/**
- * Logo "KODA" con glow cian sutil.
- * Usa text-shadow inline porque Tailwind no lo soporta nativamente.
- */
 function NavLogo() {
   return (
     <Link
@@ -82,10 +55,6 @@ interface NavLinkProps {
   onClick?: () => void;
 }
 
-/**
- * Link individual con indicador underline animado via framer-motion layoutId.
- * El layoutId="underline" permite que el indicador se deslice entre links activos.
- */
 function NavLink({ href, label, isActive, onClick }: NavLinkProps) {
   return (
     <Link
@@ -116,16 +85,12 @@ function NavLink({ href, label, isActive, onClick }: NavLinkProps) {
 // ─── Subcomponente: Avatar de usuario ─────────────────────────────────────────
 
 interface UserAvatarProps {
-  username: string;
+  name: string;
 }
 
-/**
- * Avatar circular con las iniciales del usuario.
- * Fondo cian muy oscuro, borde cian sutil.
- */
-function UserAvatar({ username }: UserAvatarProps) {
-  // Toma las dos primeras letras del username como iniciales
-  const initials = username.slice(0, 2).toUpperCase();
+function UserAvatar({ name }: UserAvatarProps) {
+  // Toma las dos primeras letras del nombre como iniciales
+  const initials = name.slice(0, 2).toUpperCase();
 
   return (
     <span
@@ -141,26 +106,22 @@ function UserAvatar({ username }: UserAvatarProps) {
 // ─── Subcomponente: Sección de usuario (autenticado) ─────────────────────────
 
 interface UserSectionProps {
-  username: string;
+  name: string;
   onLogout: () => void;
 }
 
-/**
- * Muestra el avatar, el nombre del usuario y el botón de logout.
- * Se renderiza cuando MOCK_LOGGED_IN = true.
- */
-function UserSection({ username, onLogout }: UserSectionProps) {
+function UserSection({ name, onLogout }: UserSectionProps) {
   return (
     <div className="flex items-center gap-3">
-      {/* Avatar con iniciales */}
-      <UserAvatar username={username} />
+      {/* Avatar con iniciales del nombre real */}
+      <UserAvatar name={name} />
 
-      {/* Nombre del usuario */}
+      {/* Nombre del usuario desde el store */}
       <span className="hidden font-mono text-sm text-[#888888] sm:block">
-        {username}
+        {name}
       </span>
 
-      {/* Botón de logout */}
+      {/* Botón de logout — limpia store y localStorage */}
       <CyberButton variant="ghost" size="sm" onClick={onLogout}>
         Logout
       </CyberButton>
@@ -174,21 +135,17 @@ interface MobileMenuProps {
   isOpen: boolean;
   pathname: string;
   isLoggedIn: boolean;
-  username?: string;
+  name?: string;
   onClose: () => void;
   onLogout: () => void;
   onLogin: () => void;
 }
 
-/**
- * Menú desplegable para pantallas móviles.
- * Animado con framer-motion (slide-down + fade).
- */
 function MobileMenu({
   isOpen,
   pathname,
   isLoggedIn,
-  username,
+  name,
   onClose,
   onLogout,
   onLogin,
@@ -228,12 +185,12 @@ function MobileMenu({
           />
 
           {/* Sección de autenticación en móvil */}
-          {isLoggedIn && username ? (
+          {isLoggedIn && name ? (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <UserAvatar username={username} />
+                <UserAvatar name={name} />
                 <span className="font-mono text-sm text-[#888888]">
-                  {username}
+                  {name}
                 </span>
               </div>
               <CyberButton variant="ghost" size="sm" onClick={onLogout}>
@@ -254,29 +211,34 @@ function MobileMenu({
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export function Navbar() {
-  // Ruta activa para resaltar el link correcto
   const pathname = usePathname();
-
-  // Estado del menú hamburger en móvil
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // ── Handlers mock ──────────────────────────────────────────────────────────
-  // Cuando se integre Zustand, reemplazar por loginMock() y logout() del store.
+  // Leemos el estado de autenticación y las acciones del store de Zustand
+  const user = useStore((s) => s.user);
+  const isAuthenticated = useStore((s) => s.isAuthenticated);
+  const initAuth = useStore((s) => s.initAuth);
+  const logout = useStore((s) => s.logout);
+
+  // Restaurar sesión desde localStorage al montar el componente
+  useEffect(() => {
+    initAuth();
+  }, [initAuth]);
 
   function handleLogin() {
-    // TODO: conectar con useStore().loginMock()
-    console.log('[MOCK] Abrir modal de login');
     setMobileOpen(false);
+    router.push('/login');
   }
 
   function handleLogout() {
-    // TODO: conectar con useStore().logout()
-    console.log('[MOCK] Cerrar sesión');
+    // Llama al logout del store que limpia localStorage y el estado
+    logout();
     setMobileOpen(false);
+    router.push('/login');
   }
 
   return (
-    // ── Barra fija superior ────────────────────────────────────────────────
     <header
       style={{
         backgroundColor: 'rgba(0,0,0,0.8)',
@@ -305,10 +267,10 @@ export function Navbar() {
 
         {/* ── Sección derecha: auth (desktop) ── */}
         <div className="hidden items-center md:flex">
-          {MOCK_LOGGED_IN ? (
-            // Usuario autenticado: avatar + nombre + logout
+          {isAuthenticated && user ? (
+            // Usuario autenticado: avatar con nombre real + logout
             <UserSection
-              username={MOCK_USER.username}
+              name={user.name}
               onLogout={handleLogout}
             />
           ) : (
@@ -326,7 +288,6 @@ export function Navbar() {
           aria-expanded={mobileOpen}
           aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'}
         >
-          {/* Alterna entre icono hamburger y X */}
           {mobileOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
@@ -335,8 +296,8 @@ export function Navbar() {
       <MobileMenu
         isOpen={mobileOpen}
         pathname={pathname}
-        isLoggedIn={MOCK_LOGGED_IN}
-        username={MOCK_LOGGED_IN ? MOCK_USER.username : undefined}
+        isLoggedIn={isAuthenticated}
+        name={user?.name}
         onClose={() => setMobileOpen(false)}
         onLogout={handleLogout}
         onLogin={handleLogin}

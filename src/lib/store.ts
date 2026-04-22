@@ -6,16 +6,12 @@
  *  - AuthSlice    → estado de autenticación del usuario
  *  - SessionSlice → estado de la sesión de escritura activa
  *  - UISlice      → estado de la interfaz (modales, etc.)
- *
- * NOTA: No se usa persist middleware; el estado vive solo en memoria.
- * Los datos iniciales provienen de src/lib/mock-data.ts.
  */
 
 'use client';
 
 import { create } from 'zustand';
 import {
-  MOCK_USER,
   MOCK_SNIPPETS,
   getSnippetsByLanguage,
   type User,
@@ -24,6 +20,7 @@ import {
   type Difficulty,
   type SessionResult,
 } from './mock-data';
+import { login as apiLogin, logout as apiLogout, getCurrentUser } from './api';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SLICE 1: Auth
@@ -38,19 +35,22 @@ interface AuthSlice {
   isAuthenticated: boolean;
 
   /**
+   * initAuth
+   * Inicializa el estado de autenticación desde localStorage.
+   * Llamar al montar la app para restaurar la sesión.
+   */
+  initAuth: () => void;
+
+  /**
    * loginMock
-   * Simula una llamada a una API de autenticación con un delay de red.
-   *
-   * Credenciales válidas: "test@awos.dev" / "Test1234!"
-   * - Si son correctas → establece el usuario y retorna true.
-   * - Si son incorrectas → no modifica el estado y retorna false.
+   * Mantiene compatibilidad con código existente.
+   * Ahora delega a la API real.
    */
   loginMock: (email: string, password: string) => Promise<boolean>;
 
   /**
    * logout
-   * Limpia la sesión del usuario en memoria.
-   * No realiza ninguna llamada a API.
+   * Limpia la sesión del usuario en memoria y en localStorage.
    */
   logout: () => void;
 }
@@ -136,39 +136,46 @@ type StoreState = AuthSlice & SessionSlice & UISlice;
 export const useStore = create<StoreState>()((set, get) => ({
   // ── Auth: estado inicial ──────────────────────────────────────────────────
 
-  /** Sin usuario al arrancar la aplicación */
+  /** Sin usuario al arrancar — se restaura desde localStorage con initAuth() */
   user: null,
   isAuthenticated: false,
 
   // ── Auth: acciones ────────────────────────────────────────────────────────
 
-  loginMock: async (email: string, password: string): Promise<boolean> => {
-    // Simula latencia de red (800 ms) antes de "consultar" el servidor
-    await new Promise<void>((r) => setTimeout(r, 800));
-
-    // Credenciales hardcodeadas para el entorno de desarrollo/mock
-    const VALID_EMAIL = 'test@awos.dev';
-    const VALID_PASSWORD = 'Test1234!';
-
-    if (email === VALID_EMAIL && password === VALID_PASSWORD) {
-      // Credenciales correctas → autenticar con el usuario mock
+  initAuth: () => {
+    // Restaura la sesión desde localStorage al montar la app
+    const storedUser = getCurrentUser()
+    if (storedUser) {
       set({
-        user: MOCK_USER,
+        user: storedUser as User,
         isAuthenticated: true,
-      });
-      return true;
+      })
     }
+  },
 
-    // Credenciales incorrectas → no modificar el estado
-    return false;
+  loginMock: async (email: string, password: string): Promise<boolean> => {
+    try {
+      // Llama a la API real de autenticación
+      const response = await apiLogin({ email, password })
+      const { user } = response.data
+
+      set({
+        user: user as User,
+        isAuthenticated: true,
+      })
+      return true
+    } catch {
+      return false
+    }
   },
 
   logout: () => {
-    // Limpia la sesión del usuario; el resto del estado se mantiene intacto
+    // Limpia localStorage y el estado del store
+    apiLogout()
     set({
       user: null,
       isAuthenticated: false,
-    });
+    })
   },
 
   // ── Session: estado inicial ───────────────────────────────────────────────
