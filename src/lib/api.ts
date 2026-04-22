@@ -6,8 +6,8 @@
  * El proxy (src/app/api/[...path]/route.ts) reenvía al backend real.
  *
  * Flujo:
- *   Navegador → /api/auth/login
- *   → Proxy Next.js → backend.onrender.com/api/v1/auth/login
+ * Navegador → /api/auth/login
+ * → Proxy Next.js → backend.onrender.com/api/v1/auth/login
  */
 
 // El cliente siempre llama al proxy interno — nunca al backend directamente
@@ -232,4 +232,28 @@ export async function fetchSnippet(
     `/snippets?${params.toString()}`
   )
   return response.data
+}
+
+// Sesiones de Escritura
+export interface CreateSessionInput {
+  snippetId: string
+  wpm: number
+  accuracy: number
+  mistakes: number
+  timeMs: number
+}
+
+export async function createSession(input: CreateSessionInput) {
+  const response = await fetchAPI<any>('/sessions', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+  return response
+}
+
+export async function getMySessions() {
+  const response = await fetchAPI<{ data: any[] }>('/sessions/mine', {
+    method: 'GET',
+  })
+  return response
 }
