@@ -113,7 +113,7 @@ export interface LoginInput {
  * Registra un nuevo usuario en el sistema
  */
 export async function register(input: RegisterInput): Promise<RegisterResponse> {
-  const response = await fetchAPI<RegisterResponse>('/api/v1/auth/register', {
+  const response = await fetchAPI<RegisterResponse>('/auth/register', {
     method: 'POST',
     body: JSON.stringify(input),
   })
@@ -130,7 +130,7 @@ export async function register(input: RegisterInput): Promise<RegisterResponse> 
  * Inicia sesión con credenciales existentes
  */
 export async function login(input: LoginInput): Promise<LoginResponse> {
-  const response = await fetchAPI<LoginResponse>('/api/v1/auth/login', {
+  const response = await fetchAPI<LoginResponse>('/auth/login', {
     method: 'POST',
     body: JSON.stringify(input),
   })
