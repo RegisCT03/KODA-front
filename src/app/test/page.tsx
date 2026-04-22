@@ -132,7 +132,12 @@ export default function TestPage() {
         code: snippet.code,
         difficulty: snippet.difficulty,
         tags: snippet.tags,
-        language: { name: snippet.language.name, slug: snippet.language.slug as LanguageSlug },
+        language: {
+          id: snippet.id,
+          name: snippet.language.name,
+          slug: snippet.language.slug as LanguageSlug,
+          icon: snippet.language.icon ?? '',
+        },
         specialCharacters: false,
         source: 'api',
       });
