@@ -19,6 +19,7 @@ import { CyberInput } from '@/components/ui/CyberInput';
 import { CyberButton } from '@/components/ui/CyberButton';
 import { PasswordStrength } from './PasswordStrength';
 import { register as registerUser, ApiError } from '@/lib/api';
+import { useStore } from '@/lib/store';
 
 // ─── Schema Zod ───────────────────────────────────────────────────────────────
 
@@ -85,7 +86,12 @@ export function RegisterForm() {
         password: data.password,
       });
 
-      // Registro exitoso
+      // Registro exitoso — actualizar store y redirigir
+      useStore.setState({
+        user: response.data.user,
+        isAuthenticated: true,
+      });
+
       toast.success(`¡Cuenta creada! Bienvenido ${response.data.user.name} 🚀`);
       router.push('/test');
     } catch (error) {

@@ -16,6 +16,7 @@ import { Mail, Eye, EyeOff } from 'lucide-react';
 import { CyberInput } from '@/components/ui/CyberInput';
 import { CyberButton } from '@/components/ui/CyberButton';
 import { login, ApiError } from '@/lib/api';
+import { useStore } from '@/lib/store';
 
 // ─── Schema Zod ───────────────────────────────────────────────────────────────
 
@@ -35,13 +36,9 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export function LoginForm() {
   const router = useRouter();
 
-  // Estado para mostrar/ocultar la contraseña
   const [showPassword, setShowPassword] = useState(false);
-
-  // Estado de carga durante el submit
   const [isLoading, setIsLoading] = useState(false);
 
-  // Configuración de React Hook Form con resolver Zod
   const {
     register,
     handleSubmit,
@@ -51,18 +48,22 @@ export function LoginForm() {
     resolver: zodResolver(loginSchema),
   });
 
-  // ── Handler de submit ──────────────────────────────────────────────────────
-
   async function onSubmit(data: LoginFormValues) {
     if (isLoading) return;
     setIsLoading(true);
 
     try {
-      // Llamar al backend para autenticar
+      // Llama a la API y guarda token en localStorage
       const response = await login(data);
 
-      // Login exitoso
-      toast.success(`Bienvenido de nuevo, ${response.data.user.name}! 👾`);
+      // Actualiza el store de Zustand con el usuario autenticado
+      // Esto es necesario para que ProtectedRoute y Navbar reflejen la sesión
+      useStore.setState({
+        user: response.data.user,
+        isAuthenticated: true,
+      });
+
+      toast.success(`Bienvenido de nuevo, ${response.data.user.name}!`);
       router.push('/dashboard');
     } catch (error) {
       // Manejar errores del backend
