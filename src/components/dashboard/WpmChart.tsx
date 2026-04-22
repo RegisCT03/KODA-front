@@ -1,20 +1,4 @@
 'use client';
-
-/**
- * WpmChart.tsx
- * Gráfica de historial WPM + Precisión de los últimos 30 días.
- *
- * Usa Recharts con:
- *  - LineChart responsive (100% ancho, 280px alto)
- *  - Línea WPM: cian (#00ffff), strokeWidth 2
- *  - Línea Precision: lima (#00ff00), strokeWidth 1.5, dashed
- *  - Grid apenas visible (#111)
- *  - Tooltip completamente personalizado (fondo #0a0a0a, borde cian)
- *  - Leyenda manual debajo de la gráfica
- *
- * Animación de fade-in al montar via framer-motion.
- */
-
 import { motion } from 'framer-motion';
 import {
   ResponsiveContainer,
@@ -30,22 +14,11 @@ import {
 type ValueType = number | string | ReadonlyArray<number | string>;
 type NameType  = number | string;
 
-// ─── Props ────────────────────────────────────────────────────────────────────
-
 interface WpmChartProps {
-  history: { date: string; avgWpm: number; sessions: number }[];
-  loading: boolean;
+  data?: any[];
 }
 
-// ─── Tooltip personalizado ────────────────────────────────────────────────────
-
-/**
- * CustomTooltip
- * Reemplaza el tooltip por defecto de Recharts con uno cyberpunk.
- * Fondo #0a0a0a, borde cian, texto blanco, font-mono.
- */
 function CustomTooltip({ active, payload, label }: TooltipContentProps<ValueType, NameType>) {
-  // Solo renderizar cuando el tooltip está activo y tiene datos
   if (!active || !payload || payload.length === 0) return null;
 
   return (
@@ -57,17 +30,12 @@ function CustomTooltip({ active, payload, label }: TooltipContentProps<ValueType
         boxShadow: '0 0 12px rgba(0,255,255,0.1)',
       }}
     >
-      {/* Fecha del punto */}
       <p className="mb-2" style={{ color: '#444444' }}>{label}</p>
-
-      {/* Valor WPM */}
       {payload[0] && (
         <p style={{ color: '#00ffff' }}>
           WPM: <span className="font-bold">{payload[0].value}</span>
         </p>
       )}
-
-      {/* Valor Precisión */}
       {payload[1] && (
         <p style={{ color: '#00ff00' }}>
           Precision: <span className="font-bold">{payload[1].value}%</span>
@@ -77,16 +45,7 @@ function CustomTooltip({ active, payload, label }: TooltipContentProps<ValueType
   );
 }
 
-// ─── Componente principal ─────────────────────────────────────────────────────
-
-export function WpmChart({ history, loading }: WpmChartProps) {
-  // Formateamos las fechas para mostrar solo "MMM DD" en el eje X
-  const chartData = history.map((d) => ({
-    date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    wpm: d.avgWpm,
-    sessions: d.sessions,
-  }));
-
+export function WpmChart({ data = [] }: WpmChartProps) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -94,30 +53,27 @@ export function WpmChart({ history, loading }: WpmChartProps) {
       transition={{ duration: 0.5, delay: 0.3 }}
       className="flex flex-col gap-4"
     >
-      <p className="font-mono uppercase tracking-widest" style={{ fontSize: '0.75rem', color: '#888888' }}>
-        Historial PPM — Últimos 30 días
+      <p className="font-mono uppercase tracking-widest text-[0.75rem] text-zinc-500">
+        WPM History — Last Sessions
       </p>
 
-      {loading ? (
-        <div className="flex h-[280px] items-center justify-center">
-          <span className="font-mono text-xs" style={{ color: '#333333' }}>Cargando historial...</span>
-        </div>
-      ) : chartData.length === 0 ? (
-        <div className="flex h-[280px] items-center justify-center">
-          <span className="font-mono text-xs" style={{ color: '#333333' }}>
-            Completa sesiones para ver tu historial
-          </span>
+     {data.length === 0 ? (
+        <div className="flex h-[280px] w-full items-center justify-center border border-dashed border-zinc-800 rounded">
+          <span className="text-zinc-600 text-sm font-mono">No hay suficientes datos para la gráfica</span>
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={280}>
-          <LineChart data={chartData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+          <LineChart
+            data={data}
+            margin={{ top: 8, right: 8, left: -20, bottom: 0 }}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="#111111" vertical={false} />
             <XAxis
               dataKey="date"
               tick={{ fill: '#333333', fontFamily: 'monospace', fontSize: 11 }}
               axisLine={{ stroke: '#1a1a1a' }}
               tickLine={false}
-              interval={Math.max(0, Math.floor(chartData.length / 6))}
+              interval="preserveStartEnd"
             />
             <YAxis
               tick={{ fill: '#333333', fontFamily: 'monospace', fontSize: 11 }}
@@ -134,14 +90,32 @@ export function WpmChart({ history, loading }: WpmChartProps) {
               dot={false}
               activeDot={{ r: 4, fill: '#00ffff', stroke: '#000000', strokeWidth: 2 }}
             />
+            <Line
+              type="monotone"
+              dataKey="precision"
+              stroke="#00ff00"
+              strokeWidth={1.5}
+              strokeDasharray="4 2"
+              dot={false}
+              activeDot={{ r: 3, fill: '#00ff00', stroke: '#000000', strokeWidth: 2 }}
+            />
           </LineChart>
         </ResponsiveContainer>
       )}
 
-      {/* Leyenda */}
-      <div className="flex items-center gap-2">
-        <span className="inline-block h-0.5 w-4 rounded" style={{ backgroundColor: '#00ffff' }} aria-hidden="true" />
-        <span className="font-mono" style={{ fontSize: '11px', color: '#444444' }}>PPM promedio por día</span>
+      <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2">
+          <span className="inline-block h-0.5 w-4 rounded bg-cyan-400" aria-hidden="true" />
+          <span className="font-mono text-[11px] text-zinc-500">WPM</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span
+            className="inline-block"
+            style={{ width: 16, height: 1.5, backgroundImage: 'repeating-linear-gradient(to right, #00ff00 0, #00ff00 4px, transparent 4px, transparent 6px)' }}
+            aria-hidden="true"
+          />
+          <span className="font-mono text-[11px] text-zinc-500">Precision</span>
+        </div>
       </div>
     </motion.div>
   );
