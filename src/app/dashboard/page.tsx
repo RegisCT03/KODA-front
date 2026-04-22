@@ -24,6 +24,7 @@ import { SessionsTable }         from '@/components/dashboard/SessionsTable';
 import { DifficultKeysHeatmap }  from '@/components/dashboard/DifficultKeysHeatmap';
 import { StatsCard }             from '@/components/ui/StatsCard';
 import { CyberCard }             from '@/components/ui/CyberCard';
+import { ProtectedRoute }        from '@/components/layout/ProtectedRoute';
 
 // ─── Datos mock de las StatsCards ─────────────────────────────────────────────
 
@@ -65,14 +66,14 @@ const STATS = [
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  // Estado del sidebar en móvil (abierto/cerrado)
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div
-      className="flex min-h-screen pt-14"
-      style={{ backgroundColor: '#000000' }}
-    >
+    <ProtectedRoute>
+      <div
+        className="flex min-h-screen pt-14"
+        style={{ backgroundColor: '#000000' }}
+      >
       {/* ── Sidebar fijo ── */}
       <DashboardSidebar
         isOpen={sidebarOpen}
@@ -177,5 +178,6 @@ export default function DashboardPage() {
         </main>
       </div>
     </div>
+    </ProtectedRoute>
   );
 }
