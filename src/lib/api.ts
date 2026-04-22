@@ -49,14 +49,12 @@ async function fetchAPI<T>(
   // Obtener token del localStorage si existe
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  }
+  const headers = new Headers(options.headers)
+  headers.set('Content-Type', 'application/json')
 
   // Agregar Authorization header si hay token
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`
+    headers.set('Authorization', `Bearer ${token}`)
   }
 
   const response = await fetch(url, {
