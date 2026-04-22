@@ -27,8 +27,22 @@ function getBackendBaseUrl(): string {
 }
 
 function buildTargetUrl(pathSegments: string[], request: Request): string {
-  const backendBaseUrl = getBackendBaseUrl().replace(/\/$/, '')
-  const target = new URL(`${BACKEND_API_PREFIX.replace(/^\//, '')}/${pathSegments.join('/')}`, `${backendBaseUrl}/`)
+  const baseUrl = new URL(getBackendBaseUrl())
+  const basePath = baseUrl.pathname.replace(/\/+$/, '')
+  const normalizedPrefix = BACKEND_API_PREFIX.replace(/\/+$/, '')
+  const shouldAppendPrefix = !basePath.endsWith(normalizedPrefix)
+
+  const finalPath = [
+    basePath,
+    shouldAppendPrefix ? normalizedPrefix : '',
+    pathSegments.join('/'),
+  ]
+    .filter(Boolean)
+    .join('/')
+    .replace(/\/+/g, '/')
+
+  baseUrl.pathname = finalPath.startsWith('/') ? finalPath : `/${finalPath}`
+  const target = baseUrl
   const incomingUrl = new URL(request.url)
 
   // Conserva query params (?a=1&b=2)
@@ -40,9 +54,11 @@ async function proxyRequest(
   request: Request,
   context: { params: Promise<{ path: string[] }> }
 ): Promise<Response> {
+  let targetUrl = ''
+
   try {
     const { path } = await context.params
-    const targetUrl = buildTargetUrl(path, request)
+    targetUrl = buildTargetUrl(path, request)
 
     const outgoingHeaders = new Headers(request.headers)
     outgoingHeaders.delete('host')
@@ -74,6 +90,7 @@ async function proxyRequest(
   } catch (error) {
     let status = 502
     let message = 'No se pudo conectar con el backend'
+    let code: string | undefined
 
     if (error instanceof Error) {
       if (error.name === 'AbortError') {
@@ -86,11 +103,18 @@ async function proxyRequest(
         status = 500
         message = error.message
       }
+
+      const cause = (error as Error & { cause?: { code?: string } }).cause
+      if (cause?.code) {
+        code = cause.code
+      }
     }
 
     return Response.json(
       {
         error: message,
+        code,
+        target: targetUrl || undefined,
       },
       { status }
     )
