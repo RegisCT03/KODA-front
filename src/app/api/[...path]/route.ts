@@ -93,9 +93,17 @@ async function proxyRequest(
     const { path } = await context.params
     targetUrl = buildTargetUrl(path, request)
 
-    const outgoingHeaders = new Headers(request.headers)
-    outgoingHeaders.delete('host')
-    outgoingHeaders.delete('content-length')
+    const outgoingHeaders = new Headers()
+
+    // Reenviar solo headers relevantes para evitar que el backend procese
+    // metadata de navegador (origin/referer/sec-*) en una llamada server-to-server.
+    const passthroughHeaders = ['accept', 'content-type', 'authorization']
+    passthroughHeaders.forEach((headerName) => {
+      const value = request.headers.get(headerName)
+      if (value) {
+        outgoingHeaders.set(headerName, value)
+      }
+    })
 
     const clientIp = getClientIp(request.headers)
     if (clientIp) {
