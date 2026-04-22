@@ -32,6 +32,7 @@ import { CodeArea }         from '@/components/test/CodeArea';
 import { ResultModal }      from '@/components/test/ResultModal';
 
 import { getRandomSnippet } from '@/lib/test-snippets';
+import { fetchSnippet } from '@/lib/api';
 import type { LanguageSlug, Difficulty } from '@/lib/mock-data';
 import type { TypingResult } from '@/hooks/useTypingEngine';
 
@@ -110,16 +111,44 @@ export default function TestPage() {
 
   // ── Estado de configuración ───────────────────────────────────────────────
 
-  /** Lenguaje activo seleccionado por el usuario */
   const [activeLanguage, setActiveLanguage] = useState<LanguageSlug>('python');
-
-  /** Dificultad activa (cicla al hacer click) */
   const [activeDifficulty, setActiveDifficulty] = useState<Difficulty>('EASY');
 
-  /** Snippet actual cargado en el área de código */
+  // Estado de carga del snippet desde el backend
+  const [isLoadingSnippet, setIsLoadingSnippet] = useState(false);
+
+  // Snippet actual — arranca con mock mientras carga el real
   const [currentSnippet, setCurrentSnippet] = useState(() =>
     getRandomSnippet('python'),
   );
+
+  // Carga el snippet desde el backend al montar y cuando cambia lenguaje/dificultad
+  const loadSnippetFromAPI = useCallback(async (lang: LanguageSlug, diff: Difficulty) => {
+    setIsLoadingSnippet(true);
+    try {
+      const snippet = await fetchSnippet(lang, diff);
+      setCurrentSnippet({
+        id: snippet.id,
+        code: snippet.code,
+        difficulty: snippet.difficulty,
+        tags: snippet.tags,
+        language: { name: snippet.language.name, slug: snippet.language.slug as LanguageSlug },
+        specialCharacters: false,
+        source: 'api',
+      });
+    } catch {
+      // Si falla el backend, usar snippet local como fallback
+      setCurrentSnippet(getRandomSnippet(lang));
+    } finally {
+      setIsLoadingSnippet(false);
+    }
+  }, []);
+
+  // Cargar snippet del backend al montar
+  useEffect(() => {
+    loadSnippetFromAPI(activeLanguage, activeDifficulty);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Motor de tipeo ────────────────────────────────────────────────────────
 
@@ -179,43 +208,35 @@ export default function TestPage() {
 
   // ── Acciones ──────────────────────────────────────────────────────────────
 
-  /**
-   * handleLanguageChange
-   * Cambia el lenguaje activo y carga un nuevo snippet aleatorio.
-   */
   const handleLanguageChange = useCallback((lang: LanguageSlug) => {
     setActiveLanguage(lang);
-    const snippet = getRandomSnippet(lang);
-    setCurrentSnippet(snippet);
     engine.reset();
     resetCountdown();
     sessionEndedRef.current = false;
     setLiveWpm(0);
-  }, [engine, resetCountdown]);
+    loadSnippetFromAPI(lang, activeDifficulty);
+  }, [engine, resetCountdown, activeDifficulty, loadSnippetFromAPI]);
 
-  /**
-   * handleDifficultyClick
-   * Cicla entre EASY → MEDIUM → HARD → EASY al hacer click.
-   */
   const handleDifficultyClick = useCallback(() => {
     setActiveDifficulty((prev) => {
       const idx = DIFFICULTY_CYCLE.indexOf(prev);
-      return DIFFICULTY_CYCLE[(idx + 1) % DIFFICULTY_CYCLE.length];
+      const next = DIFFICULTY_CYCLE[(idx + 1) % DIFFICULTY_CYCLE.length];
+      engine.reset();
+      resetCountdown();
+      sessionEndedRef.current = false;
+      setLiveWpm(0);
+      loadSnippetFromAPI(activeLanguage, next);
+      return next;
     });
-  }, []);
+  }, [engine, resetCountdown, activeLanguage, loadSnippetFromAPI]);
 
-  /**
-   * handleNewSnippet
-   * Carga un snippet aleatorio diferente al actual para el lenguaje activo.
-   */
   const handleNewSnippet = useCallback(() => {
-    const snippet = getRandomSnippet(activeLanguage, currentSnippet.id);
-    setCurrentSnippet(snippet);
     engine.reset();
     resetCountdown();
     sessionEndedRef.current = false;
     setLiveWpm(0);
-  }, [activeLanguage, currentSnippet.id, engine, resetCountdown]);
+    loadSnippetFromAPI(activeLanguage, activeDifficulty);
+  }, [activeLanguage, activeDifficulty, engine, resetCountdown, loadSnippetFromAPI]);
 
   /**
    * handleRetry
@@ -368,10 +389,13 @@ export default function TestPage() {
             variant="ghost"
             size="sm"
             onClick={handleNewSnippet}
+            disabled={isLoadingSnippet}
             aria-label="Cargar nuevo snippet"
           >
-            <RefreshCw size={14} />
-            <span className="hidden sm:inline">Nuevo</span>
+            <RefreshCw size={14} className={isLoadingSnippet ? 'animate-spin' : ''} />
+            <span className="hidden sm:inline">
+              {isLoadingSnippet ? 'Cargando...' : 'Nuevo'}
+            </span>
           </CyberButton>
         </div>
 

@@ -202,3 +202,34 @@ export function isAuthenticated(): boolean {
   if (typeof window === 'undefined') return false
   return !!localStorage.getItem('token')
 }
+
+// ─── Snippets ─────────────────────────────────────────────────────────────────
+
+export interface SnippetResponse {
+  id: string
+  code: string
+  difficulty: 'EASY' | 'MEDIUM' | 'HARD'
+  tags: string[]
+  language: {
+    name: string
+    slug: string
+    icon: string | null
+  }
+}
+
+/**
+ * Obtiene un snippet aleatorio del backend
+ * GET /snippets?language=python&difficulty=EASY
+ */
+export async function fetchSnippet(
+  language: string,
+  difficulty?: string
+): Promise<SnippetResponse> {
+  const params = new URLSearchParams({ language })
+  if (difficulty) params.set('difficulty', difficulty)
+
+  const response = await fetchAPI<{ data: SnippetResponse }>(
+    `/snippets?${params.toString()}`
+  )
+  return response.data
+}
