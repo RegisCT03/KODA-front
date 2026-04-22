@@ -36,8 +36,8 @@ interface AuthTabsProps {
  */
 function AuthTabs({ active, onChange }: AuthTabsProps) {
   const tabs: { id: ActiveTab; label: string }[] = [
-    { id: 'login',    label: 'Login'    },
-    { id: 'register', label: 'Register' },
+    { id: 'login',    label: 'Ingresar'   },
+    { id: 'register', label: 'Registrarse' },
   ];
 
   return (

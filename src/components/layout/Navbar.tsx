@@ -27,8 +27,8 @@ import { useStore } from '@/lib/store';
 // ─── Links de navegación ──────────────────────────────────────────────────────
 
 const NAV_LINKS = [
-  { label: 'Test',      href: '/test'      },
-  { label: 'Dashboard', href: '/dashboard' },
+  { label: 'Práctica',   href: '/test'      },
+  { label: 'Dashboard',  href: '/dashboard' },
 ] as const;
 
 // ─── Subcomponente: Logo ──────────────────────────────────────────────────────
@@ -123,7 +123,7 @@ function UserSection({ name, onLogout }: UserSectionProps) {
 
       {/* Botón de logout — limpia store y localStorage */}
       <CyberButton variant="ghost" size="sm" onClick={onLogout}>
-        Logout
+        Cerrar sesión
       </CyberButton>
     </div>
   );
@@ -194,12 +194,12 @@ function MobileMenu({
                 </span>
               </div>
               <CyberButton variant="ghost" size="sm" onClick={onLogout}>
-                Logout
+                Cerrar sesión
               </CyberButton>
             </div>
           ) : (
             <CyberButton variant="ghost" size="sm" onClick={onLogin}>
-              Login
+              Ingresar
             </CyberButton>
           )}
         </motion.div>
@@ -277,7 +277,7 @@ export function Navbar() {
           ) : (
             // Usuario anónimo: botón login
             <CyberButton variant="ghost" size="sm" onClick={handleLogin}>
-              Login
+              Ingresar
             </CyberButton>
           )}
         </div>

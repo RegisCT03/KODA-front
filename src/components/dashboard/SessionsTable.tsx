@@ -55,7 +55,7 @@ function FilterBar() {
         style={selectStyle}
         aria-label="Filtrar por lenguaje"
       >
-        <option value="all">All Languages</option>
+        <option value="all">Todos los lenguajes</option>
         <option value="python">Python</option>
         <option value="typescript">TypeScript</option>
         <option value="javascript">JavaScript</option>
@@ -70,10 +70,10 @@ function FilterBar() {
         style={selectStyle}
         aria-label="Filtrar por dificultad"
       >
-        <option value="all">All Difficulties</option>
-        <option value="easy">Easy</option>
-        <option value="medium">Medium</option>
-        <option value="hard">Hard</option>
+        <option value="all">Todas las dificultades</option>
+        <option value="easy">Fácil</option>
+        <option value="medium">Medio</option>
+        <option value="hard">Difícil</option>
       </select>
 
       {/* Filtro de estado */}
@@ -83,9 +83,9 @@ function FilterBar() {
         style={selectStyle}
         aria-label="Filtrar por estado"
       >
-        <option value="all">All Status</option>
-        <option value="completed">Completed</option>
-        <option value="invalid">Invalid</option>
+        <option value="all">Todos los estados</option>
+        <option value="completed">Completada</option>
+        <option value="invalid">Inválida</option>
       </select>
 
       {/* Botón Reset — solo visual */}
@@ -96,7 +96,7 @@ function FilterBar() {
         aria-label="Resetear filtros"
       >
         <RotateCcw size={12} />
-        Reset
+        Resetear
       </CyberButton>
     </div>
   );
@@ -190,11 +190,8 @@ export function SessionsTable() {
 
       {/* ── Título + filtros ── */}
       <div className="flex flex-col gap-3">
-        <p
-          className="font-mono uppercase tracking-widest"
-          style={{ fontSize: '0.75rem', color: '#888888' }}
-        >
-          Recent Sessions
+        <p className="font-mono uppercase tracking-widest" style={{ fontSize: '0.75rem', color: '#888888' }}>
+          Sesiones recientes
         </p>
         <FilterBar />
       </div>
@@ -205,7 +202,7 @@ export function SessionsTable() {
           {/* Cabecera */}
           <thead>
             <tr className="border-b" style={{ borderColor: '#111111' }}>
-              {['Date', 'Language', 'Difficulty', 'WPM', 'Precision', 'Status'].map((col) => (
+              {['Fecha', 'Lenguaje', 'Dificultad', 'PPM', 'Precisión', 'Estado'].map((col) => (
                 <th
                   key={col}
                   className="pb-3 pr-4 text-left font-mono uppercase tracking-widest"
@@ -230,7 +227,7 @@ export function SessionsTable() {
       <div className="flex items-center justify-between">
         {/* Contador de resultados */}
         <span className="font-mono text-xs" style={{ color: '#333333' }}>
-          1–8 of 23 sessions
+          1–8 de 23 sesiones
         </span>
 
         {/* Botones prev/next (deshabilitados en mock) */}

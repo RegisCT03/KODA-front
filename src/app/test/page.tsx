@@ -272,30 +272,10 @@ export default function TestPage() {
       : `${engine.precision}%`;
 
   const liveMetrics: LiveMetric[] = [
-    {
-      icon:  <Zap size={18} />,
-      value: wpmDisplay,
-      label: 'WPM',
-      color: '#00ffff',
-    },
-    {
-      icon:  <Target size={18} />,
-      value: precisionDisplay,
-      label: 'Precisión',
-      color: '#00ff00',
-    },
-    {
-      icon:  <AlertTriangle size={18} />,
-      value: engine.totalErrors.toString(),
-      label: 'Errores',
-      color: '#ff00ff',
-    },
-    {
-      icon:  <TrendingUp size={18} />,
-      value: `${engine.progress}%`,
-      label: 'Progreso',
-      color: '#ffff00',
-    },
+    { icon: <Zap size={18} />,           value: wpmDisplay,                              label: 'PPM',       color: '#00ffff' },
+    { icon: <Target size={18} />,        value: precisionDisplay,                        label: 'Precisión', color: '#00ff00' },
+    { icon: <AlertTriangle size={18} />, value: engine.totalErrors.toString(),           label: 'Errores',   color: '#ff00ff' },
+    { icon: <TrendingUp size={18} />,    value: `${engine.progress}%`,                  label: 'Progreso',  color: '#ffff00' },
   ];
 
   // ── Render ────────────────────────────────────────────────────────────────

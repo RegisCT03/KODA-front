@@ -35,19 +35,19 @@ const DIFFICULTY_STYLES: Record<
     color:           '#00ff00',
     borderColor:     'rgba(0,255,0,0.3)',
     backgroundColor: 'rgba(0,255,0,0.05)',
-    label:           'Easy',
+    label:           'Fácil',
   },
   MEDIUM: {
     color:           '#ffff00',
     borderColor:     'rgba(255,255,0,0.3)',
     backgroundColor: 'rgba(255,255,0,0.05)',
-    label:           'Medium',
+    label:           'Medio',
   },
   HARD: {
     color:           '#ff00ff',
     borderColor:     'rgba(255,0,255,0.3)',
     backgroundColor: 'rgba(255,0,255,0.05)',
-    label:           'Hard',
+    label:           'Difícil',
   },
 };
 

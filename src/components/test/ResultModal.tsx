@@ -51,7 +51,7 @@ function RatingBar({ wpm }: RatingBarProps) {
   return (
     <div className="flex items-center gap-2">
       <span className="font-mono text-xs" style={{ color: '#444444' }}>
-        Rating
+        Nivel
       </span>
       <div className="flex gap-1.5">
         {Array.from({ length: 5 }, (_, i) => (
@@ -135,7 +135,7 @@ export function ResultModal({ isOpen, result, onRetry }: ResultModalProps) {
                   className="font-mono text-lg font-bold tracking-widest uppercase"
                   style={{ color: '#00ffff' }}
                 >
-                  Session Complete
+                  Sesión completada
                 </h2>
 
                 {/* ── WPM enorme ── */}
@@ -153,7 +153,7 @@ export function ResultModal({ isOpen, result, onRetry }: ResultModalProps) {
                     className="font-mono text-xs uppercase tracking-widest"
                     style={{ color: '#444444' }}
                   >
-                    Words per minute
+                    Palabras por minuto
                   </span>
                 </div>
 
@@ -173,7 +173,7 @@ export function ResultModal({ isOpen, result, onRetry }: ResultModalProps) {
                     }}
                     role="alert"
                   >
-                    ⚠ Session Invalid — precision below 85%
+                    ⚠ Sesión inválida — precisión menor al 85%
                   </motion.div>
                 )}
 
@@ -233,24 +233,14 @@ export function ResultModal({ isOpen, result, onRetry }: ResultModalProps) {
 
                 {/* ── Botones de acción ── */}
                 <div className="flex gap-3">
-                  {/* "Try Again" — reinicia la sesión */}
-                  <CyberButton
-                    variant="ghost"
-                    size="md"
-                    onClick={onRetry}
-                    className="flex-1"
-                  >
-                    Try Again
+                  {/* "Reintentar" — reinicia la sesión */}
+                  <CyberButton variant="ghost" size="md" onClick={onRetry} className="flex-1">
+                    Reintentar
                   </CyberButton>
 
-                  {/* "View Dashboard" — navega al dashboard */}
-                  <CyberButton
-                    variant="primary"
-                    size="md"
-                    onClick={() => router.push('/dashboard')}
-                    className="flex-1"
-                  >
-                    View Dashboard
+                  {/* "Ver Dashboard" — navega al dashboard */}
+                  <CyberButton variant="primary" size="md" onClick={() => router.push('/dashboard')} className="flex-1">
+                    Ver Dashboard
                   </CyberButton>
                 </div>
 

@@ -95,10 +95,9 @@ export function WpmChart({ history, loading }: WpmChartProps) {
       className="flex flex-col gap-4"
     >
       <p className="font-mono uppercase tracking-widest" style={{ fontSize: '0.75rem', color: '#888888' }}>
-        WPM History — Last 30 Days
+        Historial PPM — Últimos 30 días
       </p>
 
-      {/* Estado vacío o cargando */}
       {loading ? (
         <div className="flex h-[280px] items-center justify-center">
           <span className="font-mono text-xs" style={{ color: '#333333' }}>Cargando historial...</span>
@@ -142,7 +141,7 @@ export function WpmChart({ history, loading }: WpmChartProps) {
       {/* Leyenda */}
       <div className="flex items-center gap-2">
         <span className="inline-block h-0.5 w-4 rounded" style={{ backgroundColor: '#00ffff' }} aria-hidden="true" />
-        <span className="font-mono" style={{ fontSize: '11px', color: '#444444' }}>WPM promedio por día</span>
+        <span className="font-mono" style={{ fontSize: '11px', color: '#444444' }}>PPM promedio por día</span>
       </div>
     </motion.div>
   );

@@ -28,8 +28,8 @@ interface DashboardSidebarProps {
 // ─── Links de navegación ──────────────────────────────────────────────────────
 
 const NAV_ITEMS = [
-  { href: '/',          label: 'Home',      icon: <Home size={16} />            },
-  { href: '/test',      label: 'Test',      icon: <Keyboard size={16} />        },
+  { href: '/',          label: 'Inicio',    icon: <Home size={16} />            },
+  { href: '/test',      label: 'Práctica',  icon: <Keyboard size={16} />        },
   { href: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={16} /> },
 ] as const;
 
@@ -110,19 +110,19 @@ export function DashboardSidebar({ isOpen, onClose, progressData }: DashboardSid
             <SidebarStat
               icon={<Keyboard size={14} />}
               value={progressData?.totalSessions ?? '—'}
-              label="Total Sessions"
+              label="Sesiones totales"
               color="#ffff00"
             />
             <SidebarStat
               icon={<Trophy size={14} />}
-              value={progressData ? `${progressData.bestWpm} WPM` : '— WPM'}
-              label="Best WPM"
+              value={progressData ? `${progressData.bestWpm} PPM` : '— PPM'}
+              label="Mejor PPM"
               color="#00ffff"
             />
             <SidebarStat
               icon={<Code2 size={14} />}
               value={progressData?.favoriteLanguage ?? '—'}
-              label="Fav Language"
+              label="Lenguaje favorito"
               color="#00ff00"
             />
           </div>
