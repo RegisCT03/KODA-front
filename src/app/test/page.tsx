@@ -218,7 +218,7 @@ export default function TestPage() {
         correctChars: engine.correctChars,
         totalErrors:  engine.totalErrors,
         durationMs:   Math.max(elapsedSecs, 1) * 1000,
-        keyErrors:    result.difficultKeys,
+        keyErrors:    result.keyErrorsList ?? result.difficultKeys,
       }).catch((err) => console.error('Error guardando sesión:', err));
     }
   }, [isExpired, engine.isComplete, engine, elapsedSecs]);

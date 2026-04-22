@@ -283,6 +283,15 @@ export function useTypingEngine(snippet: string) {
         .slice(0, 3)
         .map(([key]) => key);
 
+      // Lista completa de errores con repeticiones para enviar al backend
+      // El backend necesita la frecuencia real para calcular teclas difíciles
+      const keyErrorsList: string[] = []
+      for (const [key, count] of Object.entries(errorMapRef.current)) {
+        for (let i = 0; i < count; i++) {
+          keyErrorsList.push(key)
+        }
+      }
+
       // La sesión es inválida si la precisión cae por debajo del 85%
       const finalPrecision = precision;
       const status: 'COMPLETED' | 'INVALID' =
@@ -294,6 +303,7 @@ export function useTypingEngine(snippet: string) {
         precision: finalPrecision,
         totalErrors,
         difficultKeys,
+        keyErrorsList,
         durationMs,
         status,
       };
