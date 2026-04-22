@@ -1,11 +1,15 @@
 /**
  * api.ts
  * Cliente HTTP para comunicarse con el backend de AWOS.
- * Maneja autenticación, headers y errores de forma centralizada.
+ *
+ * En producción usa el proxy interno de Next.js (/api/*) para evitar CORS.
+ * El proxy reenvía las peticiones al backend real configurado en API_URL.
+ * En desarrollo apunta directamente al backend local.
  */
 
-// URL base del backend — se obtiene de la variable de entorno
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
+// En el navegador siempre usamos el proxy interno de Next.js (/api)
+// Esto evita problemas de CORS porque la petición sale del mismo origen
+const API_BASE_URL = '/api'
 
 // ─── Tipos de respuesta del backend ───────────────────────────────────────────
 
