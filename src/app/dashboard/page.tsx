@@ -7,6 +7,7 @@ import { StatsCard } from '@/components/ui/StatsCard';
 import { WpmChart } from '@/components/dashboard/WpmChart';
 import { DifficultKeysHeatmap } from '@/components/dashboard/DifficultKeysHeatmap';
 import { SessionsTable } from '@/components/dashboard/SessionsTable';
+import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { getMySessions } from '@/lib/api';
 import { useProgress } from '@/hooks/useProgress';
 
@@ -23,7 +24,7 @@ interface SessionData {
   };
 }
 
-export default function DashboardPage() {
+function DashboardContent() {
   const [sessions, setSessions] = useState<SessionData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -121,4 +122,12 @@ export default function DashboardPage() {
       </main>
     </div>
   );
+}
+
+export default function DashboardPage() {
+  return (
+    <ProtectedRoute>
+      <DashboardContent />
+    </ProtectedRoute>
+  )
 }
