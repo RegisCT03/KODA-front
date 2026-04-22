@@ -44,12 +44,29 @@ export const useStore = create<StoreState>()((set, get) => ({
   isAuthenticated: false,
 
   initAuth: () => {
+    // Restaura la sesión desde localStorage verificando que el token no haya expirado
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
     const storedUser = getCurrentUser()
-    if (storedUser) {
-      set({
-        user: storedUser as User,
-        isAuthenticated: true,
-      })
+
+    if (token && storedUser) {
+      try {
+        // Decodificar el payload del JWT sin verificar firma (solo para leer exp)
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        const isExpired = payload.exp && Date.now() / 1000 > payload.exp
+
+        if (isExpired) {
+          // Token expirado — limpiar localStorage y no restaurar sesión
+          localStorage.removeItem('token')
+          localStorage.removeItem('user')
+          return
+        }
+
+        set({ user: storedUser as User, isAuthenticated: true })
+      } catch {
+        // Token malformado — limpiar
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+      }
     }
   },
 
