@@ -113,15 +113,12 @@ interface UserSectionProps {
 function UserSection({ name, onLogout }: UserSectionProps) {
   return (
     <div className="flex items-center gap-3">
-      {/* Avatar con iniciales del nombre real */}
-      <UserAvatar name={name} />
-
       {/* Nombre del usuario desde el store */}
       <span className="hidden font-mono text-sm text-[#888888] sm:block">
         {name}
       </span>
 
-      {/* Botón de logout — limpia store y localStorage */}
+      {/* Botón de logout */}
       <CyberButton variant="ghost" size="sm" onClick={onLogout}>
         Cerrar sesión
       </CyberButton>
@@ -187,12 +184,7 @@ function MobileMenu({
           {/* Sección de autenticación en móvil */}
           {isLoggedIn && name ? (
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <UserAvatar name={name} />
-                <span className="font-mono text-sm text-[#888888]">
-                  {name}
-                </span>
-              </div>
+              <span className="font-mono text-sm text-[#888888]">{name}</span>
               <CyberButton variant="ghost" size="sm" onClick={onLogout}>
                 Cerrar sesión
               </CyberButton>
