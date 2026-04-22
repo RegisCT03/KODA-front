@@ -8,6 +8,8 @@ const BACKEND_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   (process.env.NODE_ENV === 'development' ? 'http://localhost:4000' : '')
 
+const BACKEND_API_PREFIX = '/api/v1'
+
 const BACKEND_TIMEOUT_MS = 15000
 
 function getBackendBaseUrl(): string {
@@ -25,7 +27,8 @@ function getBackendBaseUrl(): string {
 }
 
 function buildTargetUrl(pathSegments: string[], request: Request): string {
-  const target = new URL(pathSegments.join('/'), `${getBackendBaseUrl().replace(/\/$/, '')}/`)
+  const backendBaseUrl = getBackendBaseUrl().replace(/\/$/, '')
+  const target = new URL(`${BACKEND_API_PREFIX.replace(/^\//, '')}/${pathSegments.join('/')}`, `${backendBaseUrl}/`)
   const incomingUrl = new URL(request.url)
 
   // Conserva query params (?a=1&b=2)
